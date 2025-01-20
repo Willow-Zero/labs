@@ -87,7 +87,7 @@ RUN apt-get -y install\
 RUN apt-get -y install\
   bats
 
-# install ctags for lab1 (cs202)
+# install ctags for lab1 (cs202; mostly not in lab but install anyway)
 RUN apt-get -y install\
     exuberant-ctags
 
