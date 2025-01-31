@@ -32,13 +32,14 @@ extern void free_node(struct list_node *node);
 //
 // Use alloc_node to create a new node.  Don't forget to set its
 // value!
-void
-list_insert(struct list_node *head, int value)
+void list_insert(struct list_node *head, int value)
 {
 	assert(head != NULL);
 
-	// TODO: Your code here.
-	assert(0);
+	struct list_node *newNode = alloc_node();
+	newNode->value = value;
+	newNode->next = head->next;
+	head->next = newNode;
 }
 
 // Return a pointer to the last node in a linked list, starting
@@ -57,14 +58,14 @@ list_insert(struct list_node *head, int value)
 // If the head node pointer refers to the node with the value 0,
 // list_end(head) should return a pointer to the node with the
 // value of 2.
-struct list_node *
-list_end(struct list_node *head)
+struct list_node * list_end(struct list_node *head)
 {
 	assert(head != NULL);
-
-	// TODO: Your code here.
-	assert(0);
-	return NULL;
+	struct list_node * cursor = head;
+	while (cursor->next != NULL){
+		cursor = cursor->next;
+	}
+	return cursor;
 }
 
 // Return the number of nodes in a linked list, starting from the
@@ -83,14 +84,17 @@ list_end(struct list_node *head)
 // list_size(head) should return 3.  If the head node pointer
 // refers to the node with the value 1, list_size(head) should
 // return 2.
-int
-list_size(struct list_node *head)
+int list_size(struct list_node *head)
 {
-	assert(head != NULL);
 
-	// TODO: Your code here.
-	assert(0);
-	return 0;
+	assert(head != NULL);
+	struct list_node * cursor = head;
+	int sizeCounter = 1;
+	while (cursor->next !=NULL){
+		sizeCounter++;
+		cursor = cursor->next;
+	}	
+	return sizeCounter;
 }
 
 // Return a pointer to the first node in the given linked list
@@ -114,15 +118,22 @@ list_size(struct list_node *head)
 //
 // If the head node contains the sought-after value, then the predecessor
 // pointer should be set to NULL.
-struct list_node *
-list_find(struct list_node *head, int value, struct list_node **predp)
+struct list_node * list_find(struct list_node *head, int value, struct list_node **predp)
 {
 	assert(head != NULL);
 	assert(predp != NULL);
+	*predp = NULL; 
+	struct list_node* cursor = head;
 
-	// TODO: Your code here.
-	assert(0);
-	return NULL;
+	while (cursor !=NULL){
+		if (cursor->value == value){
+			return cursor;
+		}
+		*predp = cursor;
+		cursor = cursor->next;
+	}
+	*predp = NULL; 
+	return NULL; 
 }
 
 // Remove a node from the given linked list (starting at the given head)
@@ -177,13 +188,25 @@ list_find(struct list_node *head, int value, struct list_node **predp)
 //   does not need a separate case for removing the head node.
 //
 // Hint: Don't forget to call free_node!
-int
-list_remove(struct list_node **headp, int value)
+int list_remove(struct list_node **headp, int value)
 {
 	assert(headp != NULL);
-	assert(*headp != NULL);
 
-	// TODO: Your code here.
-	assert(0);
-	return 0;
+	if (*headp == NULL) {
+		return 0; 
+	}
+
+	struct list_node **cursor = headp;
+
+	while (*cursor != NULL) {
+		if ((*cursor)->value == value) {
+			struct list_node *nodeToRemove = *cursor;
+			*cursor = nodeToRemove->next; 
+			free_node(nodeToRemove);
+			return 1;
+		}
+		cursor = &((*cursor)->next);
+	}
+	return 0; 
 }
+
