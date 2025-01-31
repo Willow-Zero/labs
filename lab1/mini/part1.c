@@ -9,7 +9,7 @@ void
 set_to_fifteen(int *ptr)
 {
 	// TODO: Your code here.
-	assert(0);
+	*ptr = 15;
 }
 
 // Return the sum of all elements in the given array.  The array
@@ -22,12 +22,16 @@ set_to_fifteen(int *ptr)
 // (like array objects do in Java), we generally have to pass in a
 // length parameter to functions which use pointers to reference
 // arrays.
-int
-array_sum(int *arr, int n)
+int array_sum(int *arr, int n)
 {
 	// TODO: Your code here.
-	assert(0);
-	return -1;
+	int i = 0;
+	int totalSum = 0;
+	while (i<n){
+		totalSum += arr[i];
+		i++;
+	}
+	return totalSum;
 }
 
 
