@@ -1,5 +1,5 @@
 ## Basic C Programming Lab consists of three components
-
+ 
 1. Component-1 is under the `mini/` subdirectory. Complete the code in `part[1-3].c`. Test them 
 individually (for example, test part1 by typing `build/part1`) and altogether (by typing `./grade-lab`).
 
