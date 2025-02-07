@@ -13,7 +13,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <dirent.h>
-
+#include <unistd.h>
 
 static int err_code;
 
@@ -90,10 +90,11 @@ static int group_for_gid(gid_t gid, char* buf, size_t buflen) {
  * string in `char *out`. Returns the length of the formatted string (see, `man
  * 3 strftime`).
  */
-static size_t date_string(struct timespec* ts, char* out, size_t len) {
+static size_t date_string(struct timespec * ts, char* out, size_t len) {
     struct timespec now;
     timespec_get(&now, TIME_UTC);
-    struct tm* t = localtime(&ts->tv_sec);
+    time_t * seconds =  &ts->tv_sec;
+    struct tm * t = localtime(seconds);
     if (now.tv_sec < ts->tv_sec) {
         // Future time, treat with care.
         return strftime(out, len, "%b %e %Y", t);
@@ -114,7 +115,7 @@ static void help() {
     /* TODO: add to this */
     printf("ls: List files\n");
     printf("\t--help\t: Print this help\n");
-    printf("\t-a\t: list all files, including hidden ones (UNIMPLEMENTED)\n");
+    printf("\t-a\t: list all files, including hidden ones\n");
     printf("\t-n\t: list number of files (UNIMPLEMENTED)\n");
     printf("\t-R\t: recursively list all subdirs (UNIMPLEMENTED)\n");
     printf("\t-a\t: list all files, including hidden ones (UNIMPLEMENTED)\n");
@@ -155,7 +156,9 @@ bool test_file(char* pathandname) {
  */
 bool is_dir(char* pathandname) {
     /* TODO: fillin */
-    if (opendir(pathandname) != NULL){ //tests for dir by trying to open it. on null, the path doesnt describe a directory.
+    DIR * test = NULL;
+    if ((test = opendir(pathandname)) != NULL){ //tests for dir by trying to open it. on null, the path doesnt describe a directory.
+        closedir(test);
         return true;
     }
     return false;
@@ -184,13 +187,31 @@ const char* ftype_to_str(mode_t mode) {
  */
 void list_file(char* pathandname, char* name, bool list_long) {
     /* TODO: fill in*/
-    name = name+'\0';
-    printf((name));
-    if (is_dir(pathandname)){
-        printf("/");
+    if (!list_long){ //if not in long mode
+        printf((name)); //starts by printing filename
+        if (is_dir(pathandname)){//then lists / if its a directory
+            printf("/");
+        }
+        printf("\n");   //then gives a /n to separate
     }
-    
-
+    else{ //if in long mode
+        if (test_file(pathandname)==-1){
+            exit(err_code);
+        }
+        struct stat fileStat;
+        stat(pathandname, &fileStat);
+        //DONE: derive links number
+        //DONE: derive owner and group
+        //DONE: derive size ", statbuf.st_nlink
+        //TODO: derive date
+        //TODO: derive perm string
+        int linksNum = fileStat.st_nlink;
+        char groupName[32];
+        char userName[32];
+        group_for_gid(fileStat.st_gid, groupName, 32);
+        uname_for_uid(fileStat.st_uid, userName, 32);
+        printf("%s %d %10s %10s %10ld %10s %s\n","XXPERMSXXX",linksNum,userName,groupName,fileStat.st_size,"DATETIME",name);
+    }
 }
 
 /* list_dir():
@@ -213,16 +234,29 @@ void list_dir(char* dirname, bool list_long, bool list_all, bool recursive) {
      *       closedir()
      *   See the lab description for further hints
      */
-    DIR * targetDir = opendir(dirname);
-    struct dirent * nextItem = readdir(targetDir);
-    while (nextItem != NULL){
-        char* name = nextItem->d_name;
-        char pathandname[256] = "";
-        strcat(pathandname,dirname);
-        strcat(pathandname,name);
-        list_file(pathandname,name,list_long);
+     if (!test_file(dirname)){
+        printf("ERROR: Not a file");
+     }
+    if (!is_dir(dirname)){
+        list_file (dirname,dirname,list_long);
     }
-    closedir(targetDir);
+    DIR * targetDir = opendir(dirname); //opens direcroty as targetdir
+    struct dirent * nextItem = readdir(targetDir); // creats a struct for the next item
+    while (nextItem != NULL){
+        char* name = nextItem->d_name; //assigns name to the proper struct element
+        char pathandname[64] = "";     //new string for the pathandname, could be more efficient but im doing this quick and dirty and i can make it pretty later
+        strcat(pathandname,dirname);    //appends dirname and name to the path
+        strcat(pathandname,"/");
+        strcat(pathandname,name);
+        if (list_all){
+            list_file(pathandname,name,list_long);  //lists file
+        }
+        else if (name[0] != '.'){
+            list_file(pathandname,name,list_long); 
+        }
+        nextItem = readdir(targetDir); //advances the directory pointer
+    }  
+    closedir(targetDir); //closes the directory because its best to be responsible with memory usage.
 
 }
 
@@ -241,7 +275,7 @@ int main(int argc, char* argv[]) {
 
     // This loop is used for argument parsing. Refer to `man 3 getopt_long` to
     // better understand what is going on here.
-    while ((opt = getopt_long(argc, argv, "1a", opts, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "1lnRa", opts, NULL)) != -1) {
         switch (opt) {
             case '\a':
                 // Handle the case that the user passed in `--help`. (In the
@@ -260,31 +294,34 @@ int main(int argc, char* argv[]) {
                 // cases that the user enters "-l" or "-R"
             case 'R':
                 recursive = true;
+                NOT_YET_IMPLEMENTED("RECURSIVE");
             case 'n':
                 number = true;
+                NOT_YET_IMPLEMENTED("NUMBER MODE");
+            case 'l':
+                list_long = true;
             default:
                 printf("Unimplemented flag %d\n", opt);
                 break;
         }
     }
-
     // TODO: Replace this.
-    if (optind < argc) {
-        printf("Optional arguments: ");
-    }
+
     for (int i = optind; i < argc; i++) {
-        printf("%s ", argv[i]);
+        list_dir(argv[i],list_long,list_all,recursive);
     }
-    if (optind < argc) {
-        printf("\n");
+    if (optind == argc) {
+        char cwd[128] = "";
+        getcwd(cwd,128);
+        list_dir(cwd,list_long,list_all,recursive);
     }
+    //NOT_YET_IMPLEMENTED("file ordering");
     
     //DONE: test if is directory
     //TODO: if file, but not direcroty, just return filename
     //TODO: if directory, retrieve directory pointer
     //TODO: iter through directory and list files
     //TODO: implement flags
-    list_dir(argv[1],list_long,list_all,recursive);
-    NOT_YET_IMPLEMENTED("Listing files");
-    exit(err_code);
+ 
+    //exit(err_code);
 }
