@@ -12,6 +12,8 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include <dirent.h>
+
 
 static int err_code;
 
@@ -211,6 +213,17 @@ void list_dir(char* dirname, bool list_long, bool list_all, bool recursive) {
      *       closedir()
      *   See the lab description for further hints
      */
+    DIR * targetDir = opendir(dirname);
+    struct dirent * nextItem = readdir(targetDir);
+    while (nextItem != NULL){
+        char* name = nextItem->d_name;
+        char pathandname[256] = "";
+        strcat(pathandname,dirname);
+        strcat(pathandname,name);
+        list_file(pathandname,name,list_long);
+    }
+    closedir(targetDir);
+
 }
 
 int main(int argc, char* argv[]) {
@@ -218,7 +231,7 @@ int main(int argc, char* argv[]) {
     // unsigned.
     int opt;
     err_code = 0;
-    bool list_long = false, list_all = false;
+    bool list_long = false, list_all = false, recursive = false,number = false;
     // We make use of getopt_long for argument parsing, and this
     // (single-element) array is used as input to that function. The `struct
     // option` helps us parse arguments of the form `--FOO`. Refer to `man 3
@@ -245,6 +258,10 @@ int main(int argc, char* argv[]) {
                 break;
                 // TODO: you will need to add items here to handle the
                 // cases that the user enters "-l" or "-R"
+            case 'R':
+                recursive = true;
+            case 'n':
+                number = true;
             default:
                 printf("Unimplemented flag %d\n", opt);
                 break;
@@ -262,11 +279,12 @@ int main(int argc, char* argv[]) {
         printf("\n");
     }
     
-    //TODO: test if is directory
+    //DONE: test if is directory
     //TODO: if file, but not direcroty, just return filename
     //TODO: if directory, retrieve directory pointer
     //TODO: iter through directory and list files
     //TODO: implement flags
+    list_dir(argv[1],list_long,list_all,recursive);
     NOT_YET_IMPLEMENTED("Listing files");
     exit(err_code);
 }
