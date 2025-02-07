@@ -111,7 +111,11 @@ static size_t date_string(struct timespec* ts, char* out, size_t len) {
 static void help() {
     /* TODO: add to this */
     printf("ls: List files\n");
-    printf("\t--help: Print this help\n");
+    printf("\t--help\t: Print this help\n");
+    printf("\t-a\t: list all files, including hidden ones (UNIMPLEMENTED)\n");
+    printf("\t-n\t: list number of files (UNIMPLEMENTED)\n");
+    printf("\t-R\t: recursively list all subdirs (UNIMPLEMENTED)\n");
+    printf("\t-a\t: list all files, including hidden ones (UNIMPLEMENTED)\n");
     exit(0);
 }
 
@@ -149,7 +153,9 @@ bool test_file(char* pathandname) {
  */
 bool is_dir(char* pathandname) {
     /* TODO: fillin */
-
+    if (opendir(pathandname) != NULL){ //tests for dir by trying to open it. on null, the path doesnt describe a directory.
+        return true;
+    }
     return false;
 }
 
@@ -176,6 +182,13 @@ const char* ftype_to_str(mode_t mode) {
  */
 void list_file(char* pathandname, char* name, bool list_long) {
     /* TODO: fill in*/
+    name = name+'\0';
+    printf((name));
+    if (is_dir(pathandname)){
+        printf("/");
+    }
+    
+
 }
 
 /* list_dir():
@@ -248,7 +261,12 @@ int main(int argc, char* argv[]) {
     if (optind < argc) {
         printf("\n");
     }
-
+    
+    //TODO: test if is directory
+    //TODO: if file, but not direcroty, just return filename
+    //TODO: if directory, retrieve directory pointer
+    //TODO: iter through directory and list files
+    //TODO: implement flags
     NOT_YET_IMPLEMENTED("Listing files");
     exit(err_code);
 }
