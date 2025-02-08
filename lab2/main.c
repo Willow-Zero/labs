@@ -166,11 +166,60 @@ bool is_dir(char* pathandname) {
 
 /* convert the mode field in a struct stat to a file type, for -l printing */
 const char* ftype_to_str(mode_t mode) {
-    /* TODO: fillin */
-
+    if (S_ISREG(mode)) {
+        return "-";
+    }
+    else if (S_ISDIR(mode)) {
+        return "d";
+    }
     return "?";
 }
+const char* modeToPerms(mode_t mode,char*permString){
+    char stringified[7];
+    sprintf(stringified,"%o",mode);
+    int i = 2;          //starts loop at 3rd element, in the case of test, the dir i made to test this, thats the 7 in 40755
+    if (stringified[0] == '1'){
+       i++;        //if the oct has overflowed, adds one to start at the right int 
+    }
+    int j = 0;
+    while (j<3){
+        int val = (stringified[i]-'0');
+        switch (val){
+            case(0):
+                strcat(permString,"---");
+                break;
+            case(1):
+                strcat(permString,"--x");
+                break;
+            case(2):
+                strcat(permString,"-w-");
+                break;
+            case(3):
+                strcat(permString,"-wx");
+                break;
+            case(4):
+                strcat(permString,"r--");
+                break;
+            case(5):
+                strcat(permString,"r-x");
+                break;
+            case(6):
+                strcat(permString,"rw-");
+                break;
+            case(7):
+                strcat(permString,"rwx");
+                break;
+        }
+        j++;i++;
+    }
+    return permString;
 
+   //        S_IRWXO     00007   others  (not  in  group) have read, write, and
+    //                           execute permission
+   //        S_IROTH     00004   others have read permission
+   //        S_IWOTH     00002   others have write permission
+   //        S_IXOTH     00001   others have execute permission
+}
 /* list_file():
  * implement the logic for listing a single file.
  * This function takes:
@@ -210,7 +259,10 @@ void list_file(char* pathandname, char* name, bool list_long) {
         char userName[32];
         group_for_gid(fileStat.st_gid, groupName, 32);
         uname_for_uid(fileStat.st_uid, userName, 32);
-        printf("%s %d %10s %10s %10ld %10s %s\n","XXPERMSXXX",linksNum,userName,groupName,fileStat.st_size,"DATETIME",name);
+        char * fileType = ftype_to_str(fileStat.st_mode);
+        char permString[32];
+        modeToPerms(fileStat.st_mode,permString);
+        printf("%c%s %d %10s %10s %10ld %10s %s\n",*fileType,permString,linksNum,userName,groupName,fileStat.st_size,"DATETIME",name);
     }
 }
 
@@ -239,6 +291,7 @@ void list_dir(char* dirname, bool list_long, bool list_all, bool recursive) {
      }
     if (!is_dir(dirname)){
         list_file (dirname,dirname,list_long);
+        return;
     }
     DIR * targetDir = opendir(dirname); //opens direcroty as targetdir
     struct dirent * nextItem = readdir(targetDir); // creats a struct for the next item
